@@ -8,15 +8,15 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
-FILE = 'salaries.csv'
+# FILE = 'salaries.csv'
 
 
 def infer_and_convert_data_types(df: DataFrame):
-    '''
+    """
     Notes on Categorical: I considered the non-atomic category columns (such as genres of a movie),
     and came to the conclusion that it is out of scope of this project, and should be left for
     the next pipeline.
-    '''
+    """
     num_entries = len(df)
     for col_name in df.columns:
         # if dtype of the column is not object then pass
@@ -27,6 +27,7 @@ def infer_and_convert_data_types(df: DataFrame):
         uniques = len(df[col_name].str.lower().unique())
         if uniques <= 500 and uniques / len(df[col_name]) < 0.5:  # added a limit compared to the given version
             df[col_name] = pd.Categorical(df[col_name])
+            df[col_name] = df[col_name].cat.add_categories([''])
 
         # choose 100 entries to sample
         if num_entries >= 100:
@@ -72,7 +73,7 @@ def infer_and_convert_data_types(df: DataFrame):
 
 
 def exceed_max_len(entries, max_len=70, exceed_threshold=0.2):
-    '''Maps the column to dtype 'object' (False) if over 20% of entries has length >= 70'''
+    """Maps the column to dtype 'object' (False) if over 20% of entries has length >= 70"""
     lengthy_entries = 0
     for entry in entries:
         if not isinstance(entry, str):
@@ -85,7 +86,7 @@ def exceed_max_len(entries, max_len=70, exceed_threshold=0.2):
 
 
 def process_number(entries, exceed_threshold):
-    '''
+    """
     First iteration: try using pd.to_numeric. If cannot reach requirements, go to the second iteration.
     Second iteration: custom logic for handling strings, then try using pd.to_numeric again.
     Difference between my custom logic and original pandas.to_numeric:
@@ -97,16 +98,16 @@ def process_number(entries, exceed_threshold):
     no way to change the dtype of the column into int without converting the NaN into int. I could have
     use min_int or max_int but I weighed that keeping the column as float would be better (since converting
     the NaNs into int would affect arithmetic operations).
-    '''
+    """
     none_count = entries.isna().sum()  # None should not be counted as either NaN or number
     outer_converted = pd.to_numeric(entries, errors='coerce')
     nan_count = outer_converted.isna().sum()
     total_count = len(entries)
     if total_count - none_count == 0:  # empty set
-        return (False, entries)
+        return False, entries
     # allow up to 2 nans for very small datasets
     if nan_count <= 2:
-        return (True, outer_converted)
+        return True, outer_converted
     if (nan_count - none_count) / (total_count - none_count) > exceed_threshold:
         # try harder if pandas is not good enough
         pattern = r'[+-]?(?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?(?:\s*[KMBT]?(?!\w))?'
@@ -143,33 +144,33 @@ def process_number(entries, exceed_threshold):
                 multiplier *= 1000
             inner_converted.append(number)
         if nan_count <= 2:
-            return (True, inner_converted)
+            return True, inner_converted
         # here the condition is different because nan_count isn't double-counted with none_count
-        if (nan_count) / (total_count - none_count) > exceed_threshold:
-            return (False, entries)
+        if nan_count / (total_count - none_count) > exceed_threshold:
+            return False, entries
         else:
-            return (True, inner_converted)
-    return (True, outer_converted)
+            return True, inner_converted
+    return True, outer_converted
 
 
 def process_time(entries, f_name, function, exceed_threshold):
-    '''
+    """
     Same two iterations like process_number. Please refer to the function above.
     Difference between my custom logic and pandas.to_datetime:
     - Accept arbitrary separators other than limited separators given by pd for Year Month Day
     Difference between my custom logic and pandas.to_timedelta:
     - Allows unnecessary non-keywords as input (pd.to_timedelta alone works fine with
     "2 hours 30 minutes", but not "2 hours and 30 minutes")
-    '''
+    """
     none_count = entries.isna().sum()  # None should not be counted as either NaT or time
     outer_converted = function(entries, errors='coerce')
     nat_count = outer_converted.isna().sum()
     total_count = len(entries)
     if total_count - none_count == 0:  # empty set
-        return (False, entries)
+        return False, entries
     # allow up to 2 nats for very small datasets
     if nat_count <= 2:
-        return (True, outer_converted)
+        return True, outer_converted
     if (nat_count - none_count) / (total_count - none_count) > exceed_threshold:
         none_count = 0
         nat_count = 0
@@ -219,43 +220,46 @@ def process_time(entries, f_name, function, exceed_threshold):
                 if pd.isna(modified_entry):
                     nat_count += 1
         if nat_count <= 2:
-            return (True, inner_converted)
+            return True, inner_converted
         # here the condition is different because nat_count isn't double-counted with none_count
-        if (nat_count) / (total_count - none_count) > exceed_threshold:
-            return (False, entries)
+        if nat_count / (total_count - none_count) > exceed_threshold:
+            return False, entries
         else:
-            return (True, inner_converted)
-    return (True, outer_converted)
+            return True, inner_converted
+    return True, outer_converted
 
 
-def load_data(filename):
-    '''
+def load_data(file):
+    """
     Load data from .csv, .xlsx, .xls, remove trailing and leading whitespaces in the process.
-    '''
-    if filename.lower().endswith('.csv'):
-        return pd.read_csv(filename, thousands=',').applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    elif filename.lower().endswith('.xlsx') or filename.lower().endswith('.xls'):
-        return pd.read_excel(filename, thousands=',').applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    """
+    file_name = file
+    if not isinstance(file, str):
+        file_name = file.name
+    if file_name.lower().endswith('.csv'):
+        return pd.read_csv(file, thousands=',').map(lambda x: x.strip() if isinstance(x, str) else x)
+    elif file_name.lower().endswith('.xlsx') or file_name.lower().endswith('.xls'):
+        return pd.read_excel(file, thousands=',').map(lambda x: x.strip() if isinstance(x, str) else x)
     else:
         raise ValueError("Unsupported file format.")
 
 
-start = time.time()
-
-# Test the function with your DataFrame
-df = load_data(FILE)
-print("Data types before inference:")
-print(df.dtypes)
-
-print('------------------------------')
-
-df = infer_and_convert_data_types(df)
-
-end = time.time()
-
-print("Data types after inference:")
-print(df.dtypes)
-print(df)
-print(f"Time elapsed: {end - start}s")
+# start = time.time()
+#
+# # Test the function with your DataFrame
+# df = load_data(FILE)
+# print("Data types before inference:")
+# print(df.dtypes)
+#
+# print('------------------------------')
+#
+# df = infer_and_convert_data_types(df)
+#
+# end = time.time()
+#
+# print("Data types after inference:")
+# print(df.dtypes)
+# print(df)
+# print(f"Time elapsed: {end - start}s")
 
 # %%
