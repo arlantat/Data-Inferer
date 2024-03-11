@@ -12,11 +12,6 @@ from pandas import DataFrame
 
 
 def infer_and_convert_data_types(df: DataFrame) -> DataFrame:
-    """
-    Notes on Categorical: I considered the non-atomic category columns (such as genres of a movie),
-    and came to the conclusion that it is out of scope of this project, and should be left for
-    the next pipeline.
-    """
     num_entries = len(df)
     converted_df = df.copy()
     for col_name in converted_df.columns:
@@ -94,11 +89,6 @@ def process_number(entries, exceed_threshold):
     - Support for big number abbreviations (1K 1M 1B 1T)
     - Minimal non-numeric characters tolerance (for cases like $312 where pandas would ignore)
     - Innate support for thousands separator ',' without having to use kwarg
-
-    Notes: I considered the case where there are only valid integers and NaNs. Since NaN is a float, there is
-    no way to change the dtype of the column into int without converting the NaN into int. I could have
-    use min_int or max_int but I weighed that keeping the column as float would be better (since converting
-    the NaNs into int would affect arithmetic operations).
     """
     none_count = entries.isna().sum()  # None should not be counted as either NaN or number
     outer_converted = pd.to_numeric(entries, errors='coerce')
@@ -161,7 +151,7 @@ def process_time(entries, f_name, function, exceed_threshold):
     - Accept arbitrary separators other than limited separators given by pd for Year Month Day
     Difference between my custom logic and pandas.to_timedelta:
     - Allows unnecessary non-keywords as input (pd.to_timedelta alone works fine with
-    "2 hours 30 minutes", but not "2 hours and 30 minutes")
+    "2 hours 30 minutes", but not "2 hours and 30 minutes", which my logic accounts for)
     """
     none_count = entries.isna().sum()  # None should not be counted as either NaT or time
     outer_converted = function(entries, errors='coerce')
@@ -231,15 +221,19 @@ def process_time(entries, f_name, function, exceed_threshold):
 
 
 def get_column_dtype(df: DataFrame) -> list:
+    """
+    Convert raw dtype strings to user-friendly names.
+    Uncommon dtypes are not converted.
+    """
     user_friendly = {'object': 'Text',
                      'int64': 'Number',
                      'float64': 'Number',
-                     'datetime64[ns]': 'Date',
+                     'datetime64[ns]': 'Timezone-unaware DateTime',
                      'timedelta64[ns]': 'Time Difference',
                      'category': 'Category'}
     return [user_friendly[str(df[col_name].dtype)]
             if (str(df[col_name].dtype) in user_friendly)
-            else 'Complex Data Type'
+            else str(df[col_name].dtype)
             for col_name in df.columns]
 
 
