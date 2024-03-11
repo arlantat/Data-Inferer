@@ -11,29 +11,30 @@ from pandas import DataFrame
 # FILE = 'salaries.csv'
 
 
-def infer_and_convert_data_types(df: DataFrame):
+def infer_and_convert_data_types(df: DataFrame) -> DataFrame:
     """
     Notes on Categorical: I considered the non-atomic category columns (such as genres of a movie),
     and came to the conclusion that it is out of scope of this project, and should be left for
     the next pipeline.
     """
     num_entries = len(df)
-    for col_name in df.columns:
+    converted_df = df.copy()
+    for col_name in converted_df.columns:
         # if dtype of the column is not object then pass
-        if str(df.dtypes[col_name]) != 'object':
+        if str(converted_df.dtypes[col_name]) != 'object':
             continue
 
         # Categorical check
-        uniques = len(df[col_name].str.lower().unique())
-        if uniques <= 500 and uniques / len(df[col_name]) < 0.5:  # added a limit compared to the given version
-            df[col_name] = pd.Categorical(df[col_name])
-            df[col_name] = df[col_name].cat.add_categories([''])
+        uniques = len(converted_df[col_name].str.lower().unique())
+        if uniques <= 500 and uniques / len(converted_df[col_name]) < 0.5:  # added a limit compared to the given version
+            converted_df[col_name] = pd.Categorical(converted_df[col_name])
+            converted_df[col_name] = converted_df[col_name].cat.add_categories([''])
 
         # choose 100 entries to sample
         if num_entries >= 100:
-            random_entries = df[col_name].sample(n=100, random_state=42)
+            random_entries = converted_df[col_name].sample(n=100, random_state=42)
         else:
-            random_entries = df[col_name]
+            random_entries = converted_df[col_name]
 
         # do nothing if values are too lengthy
         if exceed_max_len(random_entries):
@@ -44,9 +45,9 @@ def infer_and_convert_data_types(df: DataFrame):
         converted, num_col = process_number(random_entries, exceed_threshold=0.5)
         if converted:
             # then try again with stricter threshold for all entries
-            converted, num_col = process_number(df[col_name], exceed_threshold=0.1)
+            converted, num_col = process_number(converted_df[col_name], exceed_threshold=0.1)
             if converted:
-                df[col_name] = num_col
+                converted_df[col_name] = num_col
                 continue
 
         # do the same as process_number for datetime and timedelta
@@ -56,20 +57,20 @@ def infer_and_convert_data_types(df: DataFrame):
         time_col = None
         converted, dt_col = process_time(random_entries, 'to_datetime', pd.to_datetime, exceed_threshold=0.5)
         if converted:
-            converted, dt_col = process_time(df[col_name], 'to_datetime', pd.to_datetime, exceed_threshold=0.1)
+            converted, dt_col = process_time(converted_df[col_name], 'to_datetime', pd.to_datetime, exceed_threshold=0.1)
             if converted:
                 time_col = dt_col
         converted, td_col = process_time(random_entries, 'to_timedelta', pd.to_timedelta, exceed_threshold=0.5)
         if converted:
-            converted, td_col = process_time(df[col_name], 'to_timedelta', pd.to_timedelta, exceed_threshold=0.1)
+            converted, td_col = process_time(converted_df[col_name], 'to_timedelta', pd.to_timedelta, exceed_threshold=0.1)
             if converted:
                 if time_col is None or time_col.isna().sum() > td_col.isna().sum():
                     time_col = td_col
         if time_col is not None:
-            df[col_name] = time_col
+            converted_df[col_name] = time_col
             continue
 
-    return df
+    return converted_df
 
 
 def exceed_max_len(entries, max_len=70, exceed_threshold=0.2):
@@ -227,6 +228,19 @@ def process_time(entries, f_name, function, exceed_threshold):
         else:
             return True, inner_converted
     return True, outer_converted
+
+
+def get_column_dtype(df: DataFrame) -> list:
+    user_friendly = {'object': 'Text',
+                     'int64': 'Number',
+                     'float64': 'Number',
+                     'datetime64[ns]': 'Date',
+                     'timedelta64[ns]': 'Time Difference',
+                     'category': 'Category'}
+    return [user_friendly[str(df[col_name].dtype)]
+            if (str(df[col_name].dtype) in user_friendly)
+            else 'Complex Data Type'
+            for col_name in df.columns]
 
 
 def load_data(file):

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from dtype_inference.infer_file import load_data, infer_and_convert_data_types
+from dtype_inference.infer_file import load_data, infer_and_convert_data_types, get_column_dtype
 
 
 @api_view(['GET'])
@@ -21,7 +21,9 @@ def upload(request):
         return Response({
             'message': 'File uploaded successfully',
             'df': df.fillna(''),
-            'converted_df': converted_df.fillna('')
+            'df_dtype': get_column_dtype(df),
+            'converted_df': converted_df.fillna(''),
+            'converted_df_dtype': get_column_dtype(converted_df)
         }, status=200)
     else:
         return Response({'error': 'No file provided'}, status=400)

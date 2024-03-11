@@ -1,63 +1,81 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+// Table.js
+import React, {useState} from 'react';
 
-const Table = () => {
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10); // Number of rows per page
-    const [totalRows, setTotalRows] = useState(0);
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(false);
+const Table = ({ data, itemsPerPage }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [currentDf, setCurrentDf] = useState('df');
+    const [currentDtype, setCurrentDtype] = useState('df_dtype');
 
-    useEffect(() => {
-        fetchData();
-    }, [page]); // Fetch data when page changes
+    if (!data || data['error']) return null;
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`http://localhost:8000/api/data?page=${page}&pageSize=${pageSize}`);
-            setData(response.data.rows);
-            setTotalRows(response.data.totalRows);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        } finally {
-            setLoading(false);
+    const totalPages = Math.ceil(data[currentDf][Object.keys(data[currentDf])[0]].length / itemsPerPage);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
         }
     };
 
-    const handlePageChange = (newPage) => {
-        setPage(newPage);
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
     };
+
+    const handleInputPage = (e) => {
+        let page = parseInt(e.target.value);
+        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
+
+    const changeDfState = () => {
+        if (currentDf === 'df') {
+            setCurrentDf('converted_df');
+            setCurrentDtype('converted_df_dtype');
+        } else {
+            setCurrentDf('df');
+            setCurrentDtype('df_dtype');
+        }
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, data[currentDf][Object.keys(data[currentDf])[0]].length);
 
     return (
         <div>
-            <table>
-                {/* Render table headers */}
-                <thead>
-                    <tr>
-                        <th>Column 1</th>
-                        <th>Column 2</th>
-                        {/* Add more column headers as needed */}
-                    </tr>
-                </thead>
-                <tbody>
-                    {/* Render table rows */}
-                    {data.map((row, index) => (
-                        <tr key={index}>
-                            <td>{row.column1}</td>
-                            <td>{row.column2}</td>
-                            {/* Render more table cells for additional columns */}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            {/* Pagination controls */}
-            <div>
-                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>Previous</button>
-                <span>Page {page}</span>
-                <button onClick={() => handlePageChange(page + 1)} disabled={page * pageSize >= totalRows}>Next</button>
+            <div className={"table-head"}>
+                <button onClick={handlePrevPage} disabled={currentPage === 1}>Previous Page</button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <input type="number" value={currentPage} onChange={handleInputPage}/>
+                <button onClick={handleNextPage} disabled={currentPage === totalPages}>Next Page</button>
+                <button onClick={changeDfState}>Switch Original/Modified Data</button>
             </div>
-            {loading && <p>Loading...</p>}
+            <div className="table-responsive">
+                <table className="table table-bordered">
+                    <thead>
+                        <tr>
+                            {Object.keys(data[currentDf]).map((key) => (
+                                <th key={key}>{key}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data[currentDf][Object.keys(data[currentDf])[0]].slice(startIndex, endIndex).map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                                {Object.keys(data[currentDf]).map((columnName, colIndex) => (
+                                    <td key={`${rowIndex}-${colIndex}`}>{data[currentDf][columnName][startIndex + rowIndex]}</td>
+                                ))}
+                            </tr>
+                        ))}
+                        <tr>
+                            {data[currentDtype].map((value, colIndex) => (
+                                <td key={`dtype-${colIndex}`} style={{fontWeight: 'bold'}}>{value}</td>
+                            ))}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

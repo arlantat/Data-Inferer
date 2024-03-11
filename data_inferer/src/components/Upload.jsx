@@ -1,16 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import Table from './Table'; // Import the Table component
 
 const Upload = () => {
     const [file, setFile] = useState(null);
     const [responseData, setResponseData] = useState(null);
-
-    useEffect(() => {
-        if (responseData) {
-            console.log(Object.keys(responseData['df']));
-            alert(responseData.message);
-        }
-    }, [responseData]); // This effect runs when responseData changes
+    const [loading, setLoading] = useState(false);
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -21,6 +16,7 @@ const Upload = () => {
             alert('Please select a file');
             return;
         }
+        setLoading(true);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -36,40 +32,21 @@ const Upload = () => {
         } catch (error) {
             console.error('Error:', error);
             alert('An error occurred while uploading the file');
+        } finally {
+            setLoading(false);
         }
-    };
-
-    const renderTable = (data) => {
-        console.log(data);
-        if (!data || !data['df']) return null;
-        return (
-            <table>
-                <thead>
-                    <tr>
-                        {Object.keys(data['df']).map((key) => (
-                            <th key={key}>{key}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {data['df'][Object.keys(data['df'])[0]].map((_, rowIndex) => (
-                        <tr key={rowIndex}>
-                            {Object.keys(data['df']).map((columnName, colIndex) => (
-                                <td key={`${rowIndex}-${colIndex}`}>{data['df'][columnName][rowIndex]}</td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        );
     };
 
     return (
         <div>
             <h1>File Upload</h1>
-            <input type="file" onChange={handleFileChange} />
-            <button onClick={handleFileUpload}>Upload File</button>
-            {responseData && renderTable(responseData)}
+            <div>
+                <input type="file" onChange={handleFileChange}/>
+                <button onClick={handleFileUpload}>Upload File</button>
+                {loading && <span style={{ marginLeft: '10px' }}>Loading...</span>} {/* Display "Loading..." if loading is true */}
+            </div>
+            {responseData &&
+                <Table data={responseData} itemsPerPage={5}/>} {/* Render Table component if responseData exists */}
         </div>
     );
 };
