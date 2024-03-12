@@ -5,6 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+    background-color: #151b1c;
+    color: white;
 }
 
 code {
@@ -15,3 +17,14 @@ code {
 .table-head > * {
     margin: 10px; /* Adjust the margin value as needed */
 }
+
+td, th {
+    word-wrap: break-word;
+    max-width: 500px;
+}
+
+.table {
+    --bs-table-color: white;
+    --bs-table-bg: #151b1c;
+}
+

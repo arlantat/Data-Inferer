@@ -1,3 +1,5 @@
+import os
+
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -16,7 +18,11 @@ def upload(request):
         uploaded_file = request.FILES['file']
         if not uploaded_file.name.endswith(('.csv', '.xlsx', '.xls')):
             return Response({'error': 'Invalid file format. Only .csv, .xlsx, or .xls files are allowed.'}, status=400)
+        if uploaded_file.size / (1024 * 1024) > 200:
+            return Response({'error': 'The file is too large. Limit file size to 200MB, or use the API.'}, status=400)
         df = load_data(uploaded_file)
+        if df.empty:
+            return Response({'error': 'The file is empty.'}, status=400)
         converted_df = infer_and_convert_data_types(df)
         return Response({
             'message': 'File uploaded successfully',

@@ -5,6 +5,7 @@ const Table = ({ data, itemsPerPage }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [currentDf, setCurrentDf] = useState('df');
     const [currentDtype, setCurrentDtype] = useState('df_dtype');
+    const [altTable, setAltTable] = useState('Modified')
 
     if (!data || data['error']) return null;
 
@@ -33,9 +34,11 @@ const Table = ({ data, itemsPerPage }) => {
         if (currentDf === 'df') {
             setCurrentDf('converted_df');
             setCurrentDtype('converted_df_dtype');
+            setAltTable('Original');
         } else {
             setCurrentDf('df');
             setCurrentDtype('df_dtype');
+            setAltTable('Modified');
         }
     }
 
@@ -44,35 +47,39 @@ const Table = ({ data, itemsPerPage }) => {
 
     return (
         <div>
-            <div className={"table-head"}>
-                <button onClick={handlePrevPage} disabled={currentPage === 1}>Previous Page</button>
-                <span>Page {currentPage} of {totalPages}</span>
+            <div className="table-head mb-3">
+                <button className="btn btn-secondary" onClick={handlePrevPage} disabled={currentPage === 1}>Previous
+                    Page
+                </button>
+                <span className="mx-3">Page {currentPage} of {totalPages}</span>
                 <input type="number" value={currentPage} onChange={handleInputPage}/>
-                <button onClick={handleNextPage} disabled={currentPage === totalPages}>Next Page</button>
-                <button onClick={changeDfState}>Switch Original/Modified Data</button>
+                <button className="btn btn-secondary" onClick={handleNextPage}
+                        disabled={currentPage === totalPages}>Next Page
+                </button>
+                <button className="btn btn-secondary" onClick={changeDfState}>Switch to {altTable} Data</button>
             </div>
             <div className="table-responsive">
                 <table className="table table-bordered">
                     <thead>
-                        <tr>
-                            {Object.keys(data[currentDf]).map((key) => (
-                                <th key={key}>{key}</th>
-                            ))}
-                        </tr>
+                    <tr>
+                        {Object.keys(data[currentDf]).map((key) => (
+                            <th key={key}>{key}</th>
+                        ))}
+                    </tr>
                     </thead>
                     <tbody>
-                        {data[currentDf][Object.keys(data[currentDf])[0]].slice(startIndex, endIndex).map((_, rowIndex) => (
-                            <tr key={rowIndex}>
-                                {Object.keys(data[currentDf]).map((columnName, colIndex) => (
-                                    <td key={`${rowIndex}-${colIndex}`}>{data[currentDf][columnName][startIndex + rowIndex]}</td>
-                                ))}
-                            </tr>
-                        ))}
-                        <tr>
-                            {data[currentDtype].map((value, colIndex) => (
-                                <td key={`dtype-${colIndex}`} style={{fontWeight: 'bold'}}>{value}</td>
+                    {data[currentDf][Object.keys(data[currentDf])[0]].slice(startIndex, endIndex).map((_, rowIndex) => (
+                        <tr key={rowIndex}>
+                            {Object.keys(data[currentDf]).map((columnName, colIndex) => (
+                                <td key={`${rowIndex}-${colIndex}`}>{data[currentDf][columnName][startIndex + rowIndex]}</td>
                             ))}
                         </tr>
+                    ))}
+                    <tr>
+                        {data[currentDtype].map((value, colIndex) => (
+                            <td key={`dtype-${colIndex}`} style={{fontWeight: 'bold'}}>{value}</td>
+                        ))}
+                    </tr>
                     </tbody>
                 </table>
             </div>

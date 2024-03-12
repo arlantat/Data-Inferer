@@ -6,6 +6,7 @@ const Upload = () => {
     const [file, setFile] = useState(null);
     const [responseData, setResponseData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [loadingTime, setLoadingTime] = useState('0');
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -17,6 +18,7 @@ const Upload = () => {
             return;
         }
         setLoading(true);
+        const start = new Date();
 
         const formData = new FormData();
         formData.append('file', file);
@@ -28,25 +30,32 @@ const Upload = () => {
                 }
             });
             setResponseData(response.data);
-
+            console.log(response.data);
         } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while uploading the file');
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                alert(error.response.data.error);
+            } else {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file');
+            }
         } finally {
             setLoading(false);
+            const end = new Date();
+            setLoadingTime(((end - start) / 1000).toFixed(3));
         }
     };
 
     return (
         <div>
-            <h1>File Upload</h1>
-            <div>
-                <input type="file" onChange={handleFileChange}/>
-                <button onClick={handleFileUpload}>Upload File</button>
-                {loading && <span style={{ marginLeft: '10px' }}>Loading...</span>} {/* Display "Loading..." if loading is true */}
+            <h1 className="m-3">Data Inferer</h1>
+            <div className="m-3">
+                <input type="file" className="form-control-file" onChange={handleFileChange}/>
+                <button className="btn btn-secondary" style={{ backgroundColor: "#00748f" }} onClick={handleFileUpload}>Upload File</button>
+                <span className="m-5">Time elapsed: {loadingTime}s</span>
+                {loading && <span className="ml-2">Loading...</span>}
             </div>
-            {responseData &&
-                <Table data={responseData} itemsPerPage={5}/>} {/* Render Table component if responseData exists */}
+            {responseData && <Table data={responseData} itemsPerPage={5}/>}
         </div>
     );
 };

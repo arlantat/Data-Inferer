@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
-# FILE = 'salaries.csv'
+FILE = 'sample_data.csv'
 
 
 def infer_and_convert_data_types(df: DataFrame) -> DataFrame:
@@ -252,22 +252,23 @@ def load_data(file):
         raise ValueError("Unsupported file format.")
 
 
-# start = time.time()
-#
-# # Test the function with your DataFrame
-# df = load_data(FILE)
-# print("Data types before inference:")
-# print(df.dtypes)
-#
-# print('------------------------------')
-#
-# df = infer_and_convert_data_types(df)
-#
-# end = time.time()
-#
-# print("Data types after inference:")
-# print(df.dtypes)
-# print(df)
-# print(f"Time elapsed: {end - start}s")
+if __name__ == "__main__":
+    start = time.time()
+
+    # Test the function with your DataFrame
+    df = load_data(FILE)
+    print("Data types before inference:")
+    print(df.dtypes)
+
+    print('------------------------------')
+
+    df = infer_and_convert_data_types(df)
+
+    end = time.time()
+
+    print("Data types after inference:")
+    print(df.dtypes)
+    print(df)
+    print(f"Time elapsed: {end - start}s")
 
 # %%
