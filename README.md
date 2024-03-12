@@ -53,4 +53,4 @@ Possible improvements to my algorithm:
 - Can remove redundant linear traversals for columns to optimize speed.
 - Can downcast dtypes for better memory.
 
-This is the first proper Django app I built. I also learned React from scratch and tried to put my best one. It took me a total of 8 days.
+This is the first proper Django app I built. I also learned React from scratch and tried to put my best one. It took me a total of 8 days. Regardless of the result, I had infinite fun building this one.
