@@ -6,8 +6,8 @@
 This is the take-home assignment for Rhombus AI. The task is inferring the best datatype for each column for input data. Data is processed into a Pandas DataFrame, then modified to fit the best-guessed dtype for the current column.
 
 ## Prerequisites
-- Python installed (Use Python 3.12 for the smoothest package installation experience).
-  - Node.js and npm (Node Package Manager) installed.
+- Python installed (Use Python 3.12 for seamless package installation experience).
+- Node.js and npm (Node Package Manager) installed.
 
 ## Setup
 
